@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Serial Data Display with Image</title>
+    <style>
+body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f0f0f0;
+    overflow: hidden;
+}
+
+.status-container {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+    background-color: #f3f4f6;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    z-index: 1000;
+    min-width: 300px;
+}
+
+.title {
+    text-align: center;
+    color: #4b6ae0;
+    font-weight: bold;
+    margin-top: 2px;
+    margin-bottom: 10px;
+    text-shadow: 1px 1px 2px #a8a8a8;
+    /*background-color: #e9ecef;*/
+    padding: 5px;
+    border-radius: 5px;
+    font-size: 30px;
+}
+
+
+.status-box {
+    margin-bottom: 10px;
+    padding: 10px;
+    background-color: #fff;
+    border: 1px solid #ced4da;
+    border-radius: 5px;
+    color: #333;
+}
+
+.update-button {
+    margin-top: 10px;
+    padding: 10px 20px;
+    font-size: 18px;
+    cursor: pointer;
+    border: none;
+    border-radius: 5px;
+    background-color: #007bff;
+    color: white;
+}
+
+.update-button:active {
+    background-color: #0056b3;
+    transform: scale(0.98);
+}
+
+.main-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.image-container {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    margin: 0;
+    background-color: #bdbdbd;
+}
+
+.image-container img {
+    max-height: 95vh;
+    max-width: 95vw;
+    width: auto;
+    height: auto;
+    border-radius: 5px;
+}
+
+#seal-container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 5px;
+}
+
+.score-title {
+            text-align: center;
+            font-size: 28px;
+            color: #4a5eab;
+            font-weight: bold;
+            margin-top: 20px;
+            margin-bottom: 15px;
+            text-shadow: 1px 1px 2px #a8a8a8;
+        }
+        .status-box {
+            padding: 12px;
+            background-color: #ffffff;
+            border: 1px solid #dedede;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .chart-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .status-box.total-score strong, .status-box.total-score span {
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px #a8a8a8;
+        }
+        .chart {
+            width: 200px;
+            height: 200px;
+            border: 1px solid #ccc; /* Adding a subtle border */
+            border-radius: 5px; /* Rounded corners */
+            background-color: #f8f9fa; /* Light background for the chart area */
+        }
+
+        .status-box.correctness span {
+        font-size: 24px; /* Slightly smaller than the main title for distinction */
+        font-weight: bold;
+        text-shadow: 1px 1px 1px #ccc;
+    }
+
+
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.3.3/echarts.min.js"></script>
+
+</head>
+<body>
+    <div class="status-container">
+        <div class="title">实训材料</div>
+        <div class="status-box"><strong>文件状态:</strong> <span id="file-status">等待更新...</span></div>
+        <div class="status-box"><strong>印章状态:</strong> <span id="seal-status">等待更新...</span></div>
+        <div class="status-box"><strong>按压状态:</strong> <span id="press-status">未按压</span></div>
+        <div id="seal-container" style="display: none;"></div>
+        <button class="update-button" onclick="fetchDataAndUpdateUI()">开始模拟</button>
+    </div>
+    <div class="main-container">
+        <div class="image-container">
+            <img src="../static/底板.png" alt="Document" class="background">
+        </div>
+    </div>
+
+      <div class="status-container" id="score" style="top: 10px; right: 10px; left: auto; display: none">
+            <div class="score-title">本次成绩</div>
+            <div class="status-box correctness">
+                <strong>章使用正确:</strong>
+                <span id="seal-correctness">正确</span>
+            </div>
+            <div class="chart-container">
+                <div id="location" class="chart"></div>
+                <div id="angle" class="chart"></div>
+                <div id="press" class="chart"></div>
+                <div id="no_slip" class="chart"></div>
+            </div>
+            <div class="status-box total-score">
+                <strong>总分:</strong>
+                <span id="total-score">85 分</span>
+            </div>
+
+    </div>
+
+
+
+    <script>
+// 定义全局对象来存储图表实例
+var myCharts = {};
+
+function initializeCharts() {
+    const chartData = [
+        { elementId: 'location', value: 25, name: '位置', color: '#60baf1' },  // 蓝色
+        { elementId: 'angle', value: 25, name: '方向', color: '#72d0f8' },  // 番茄色
+        { elementId: 'press', value: 25, name: '力度', color: '#9ad1f8' },  // 酸橙绿
+        { elementId: 'no_slip', value: 25, name: '稳定', color: '#fdd779' }  // 金色
+    ];
+
+    chartData.forEach(data => {
+        const chartDom = document.getElementById(data.elementId);
+        myCharts[data.elementId] = echarts.init(chartDom);
+        const option = {
+            series: [{
+                type: 'gauge',
+                min: 0,
+                max: 25,
+                splitNumber: 5,
+                progress: {
+                    show: true,
+                    width: 18,
+                    roundCap: true,  // 启用圆角
+                    color: data.color  // 进度条颜色
+                },
+                itemStyle: {
+                    color: data.color,  // 指针颜色
+                    shadowColor: data.color,  // 阴影颜色与图表颜色一致
+                    shadowBlur: 10,
+                    shadowOffsetX: 2,
+                    shadowOffsetY: 2
+                },
+                axisLine: {
+                    lineStyle: {
+                        width: 18,
+                        roundCap: true,  // 圆角结束
+                        color: [[1, data.color]]  // 轴线颜色，使用数组形式应用同一颜色
+                    }
+                },
+                axisTick: {
+                    show: false
+                },
+                splitLine: {
+                    length: 5,
+                    distance: 2,
+                    lineStyle: {
+                        width: 2,
+                        color: '#999'
+                    }
+                },
+                axisLabel: {
+                    distance: 20,  // 调整距离使刻度线更紧凑
+                    color: '#999',
+                    fontSize: 15
+                },
+                title: {
+                    show: true,
+                    offsetCenter: [0, '110%'],
+                    textStyle: {
+                        fontSize: 20,
+                        fontWeight: 'bold'
+                    }
+                },
+                detail: {
+                    valueAnimation: true,
+                    formatter: '{value}',  // 去掉百分号
+                    fontSize: 25,
+                    offsetCenter: [0, '60%'],
+                    color: '#333'  // 细节字体颜色
+                },
+                data: [{ value: data.value.toFixed(2), name: data.name }]
+            }]
+        };
+        myCharts[data.elementId].setOption(option);
+    });
+}
+
+
+
+
+
+
+
+
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeCharts();
+    });
+
+    function updateTotalScore(score) {
+        const scoreSpan = document.getElementById('total-score');
+        scoreSpan.textContent = `${score} 分`;
+        if (score < 50) {
+            scoreSpan.style.color = '#dc3545'; // Red
+        } else if (score < 75) {
+            scoreSpan.style.color = '#ffc107'; // Yellow
+        } else {
+            scoreSpan.style.color = '#32cd32'; // Green
+        }
+    }
+
+    // Example call to update total score
+    updateTotalScore(85);
+
+    function updateSealCorrectness(correct) {
+        const correctnessSpan = document.getElementById('seal-correctness');
+        if (correct) {
+            correctnessSpan.textContent = '正确';
+            correctnessSpan.style.color = '#4169E1'; // Blue for correct
+        } else {
+            correctnessSpan.textContent = '错误';
+            correctnessSpan.style.color = '#DC143C'; // Red for incorrect
+        }
+    }
+
+    // Example usage
+    updateSealCorrectness(true);
+
+    async function fetchYourData() {
+        await fetch('/query_pp');
+        const response = await fetch('/latest_paper_code');
+        if (!response.ok) throw new Error('Network response was not ok');
+        return response.json();
+    }
+
+    function showSeal(sealDataArray) {
+        const sealContainer = document.getElementById('seal-container');
+        sealContainer.innerHTML = ''; // 清除现有的印章图像
+        if (sealDataArray.length > 0) {
+            sealContainer.style.display = 'flex'; // 有印章时显示容器
+            sealDataArray.forEach(sealData => {
+                const sealImg = document.createElement('img');
+                sealImg.src = sealData.seal_img;
+                sealImg.style.width = '100px'; // 控制图样大小
+                sealImg.style.margin = '5px 0'; // 留出间隙
+                sealImg.style.transition = 'transform 0.5s'; // 平滑动画
+                sealImg.style.transform = `rotate(${sealData.Yaw}deg)`; // 应用旋转
+                sealContainer.appendChild(sealImg);
+            });
+        } else {
+            sealContainer.style.display = 'none'; // 没有印章时隐藏容器
+        }
+
+    }
+
+
+    async function fetchSealStatus() {
+        try {
+            const response = await fetch('/seal_status');
+            const data = await response.json();
+            if (data.status === '拿起') {
+                updateStatusMessage(data.status, 'seal-status');
+                showSeal([data.seal_azimuth]); // 显示印章图样和处理旋转
+            } else {
+                updateStatusMessage(data.status, 'seal-status');
+                document.getElementById('seal-container').style.display = 'none';
+
+            }
+        } catch (error) {
+            console.error('Fetch error:', error);
+            updateStatusMessage('数据更新失败', 'seal-status');
+        }
+    }
+
+    function hideScoreDisplay() {
+        const scoreContainer = document.getElementById('score');
+        scoreContainer.style.display = 'none';
+    }
+    async function fetchDataAndUpdateUI() {
+        hideScoreDisplay();
+        try {
+            const data = await fetchYourData();
+            if (data.image_url !== 0) {
+                updateImageContainer(data.image_url);
+                updateStatusMessage(data.image_url.split('/').pop(), 'file-status');
+            } else {
+                updateStatusMessage('数据不匹配任何预设文件', "file-status");
+            }
+            clearAllSeals();
+        } catch (error) {
+            console.error('Fetch error:', error);
+            updateStatusMessage('数据更新失败', 'file-status');
+        }
+    }
+
+    function updateStatusMessage(message, elementId) {
+        const element = document.getElementById(elementId);
+        if (element) {
+            element.textContent = message;
+        }
+    }
+
+    function updateImageContainer(imageUrl) {
+        const imageContainer = document.querySelector('.image-container');
+        imageContainer.innerHTML = `<img src="${imageUrl}" alt="Matched File">`;
+    }
+
+    function fetchSerialData() {
+        fetch('/data')
+            .then(response => response.json())
+            .then(data => {
+                // 这里可以处理/data端点返回的数据
+            })
+            .catch(error => console.error('Fetch error:', error));
+    }
+
+    async function fetchSealDataAndUpdateUI() {
+        try {
+            const response = await fetch('/seal_data');  // 确保这个API返回单个印章的数据
+            if (!response.ok) throw new Error('Network response was not ok');
+            const data = await response.json();
+            if (data.is_pressing){
+                updateStatusMessage('按压中', 'press-status');
+            }
+            else
+            {
+                updateStatusMessage('未按压', 'press-status');
+            }
+            if (data.seal){
+                createSeal(data);  // 创建新的img元素
+                updateScore(data.scores); // 如果印章存在，则更新分数
+            }
+
+
+
+        } catch (error) {
+            console.error('Fetch error:', error);
+        }
+    }
+
+    function createSeal(sealData) {
+        const imageContainer = document.querySelector('.image-container');
+        const seal = document.createElement('img');
+        seal.className = 'seal';
+        seal.style.position = 'absolute';
+        seal.src = sealData.image_url;
+        seal.alt = 'Seal';
+        seal.style.top = `${sealData.top}%`;
+        seal.style.left = `${sealData.left}%`;
+        seal.style.transform = `translate(-50%, -50%) rotate(${sealData.rotation}deg)`;
+        seal.style.width = '7.8vw'; // 控制印章的大小
+        seal.style.display = 'block';
+        imageContainer.appendChild(seal);
+    }
+
+    function clearAllSeals() {
+        const seals = document.querySelectorAll('.seal');
+        seals.forEach(seal => seal.remove());
+    }
+
+    // function toggleScoreDisplay() {
+    //     const scoreContainer = document.querySelector('#score');
+    //     if (scoreContainer.style.display === 'none' || scoreContainer.style.display === '') {
+    //         scoreContainer.style.display = 'block';
+    //     } else {
+    //         scoreContainer.style.display = 'none';
+    //     }
+    // }
+
+    function updateScore(scores) {
+        // 满分配置
+        const maxScores = {
+            'location': 25,  // 位置满分40分
+            'angle': 25,  // 方向满分20分
+            'press': 25,   // 力度满分20分
+            'no_slip': 25        // 无拖拽满分20分
+        };
+
+        // 更新正确性显示
+        updateSealCorrectness(scores.seal_no);
+
+        // 更新每个仪表盘
+        Object.keys(maxScores).forEach(chartId => {
+            const scoreValue = scores[chartId]; // 从scores对象中获取相应的得分
+            const percentage = (scoreValue / maxScores[chartId]) * 100; // 计算得分百分比
+            const chart = myCharts[chartId];
+            const currentName = chart.getOption().series[0].data[0].name; // 获取当前的name
+            myCharts[chartId].setOption({
+                series: [{
+                    data: [{
+                        value: percentage,
+                        name: currentName
+                    }]
+                }]
+            });
+        });
+
+        // 如果需要计算总分
+        const totalScore = Object.keys(maxScores).reduce((total, chartId) => {
+            return total + (scores[chartId] / maxScores[chartId] * maxScores[chartId]);
+        }, 0);
+        // 更新总分显示
+        updateTotalScore(totalScore.toFixed(0));
+
+        document.getElementById('score').style.display = 'block';
+        setTimeout(() => {
+            fetchDataAndUpdateUI();
+        }, 10000); // 10000 milliseconds = 10 seconds
+    }
+
+
+
+    document.addEventListener('DOMContentLoaded', function() {
+        fetchDataAndUpdateUI();
+        fetchSealStatus();
+        //setInterval(fetchDataAndUpdateUI, 1000); // 每1秒更新文件和印章状态
+        setInterval(fetchSealStatus, 100); // 每1秒更新印章状态
+        setInterval(fetchSerialData, 100); // 每200毫秒请求/data数据
+        setInterval(fetchSealDataAndUpdateUI, 100);
+    });
+    </script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Serial Data Display</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+   <script>
+$(document).ready(function(){
+    setInterval(function(){
+        $.getJSON('/data', function(response) {
+            var formattedData = response.data.replace(/\n/g, '<br>'); // 替换换行符为HTML换行标签
+            $('#data').html(formattedData); // 使用.html()而非.text()
+        });
+    }, 200); // 每200毫秒更新数据，不是每秒
+});
+</script>
+
+</head>
+<body>
+    <h1>端口数据：</h1>
+    <p id="data">等待数据中...</p>
+</body>
+</html>
