@@ -37,7 +37,7 @@ time_count = 0
 paper_code_to_image_url = {
     111222333: "static/盖章实训文件（中秋）_01.png",
     123454321: "static/22.jpg",
-    111222444: "static/党员组织关系介绍信_00.png",
+    111222444: "static/建设工程施工合同_01.png",
     111222555: "static/联合发文_01.png",
     111222666: "static/建设工程施工合同_00.png"
 
@@ -51,7 +51,7 @@ seal_location_dict = {
     111222333: [54, 65],
 }
 
-correct_seal = 2
+correct_seal = 3
 
 # 印章图片路径
 seal_no = 0,
@@ -62,13 +62,17 @@ seal_dict = {
         "移": "static/公章-服装-移.png"},
     2: {"正": "static/公章-建筑-正.png", "浅": "static/公章-建筑-浅.png", "深": "static/公章-建筑-深.png",
         "移": "static/公章-建筑-移.png"},
+    3: {"正": "static/公章-建筑-正.png", "浅": "static/公章-建筑-浅.png", "深": "static/公章-建筑-深.png",
+            "移": "static/公章-建筑-移.png"},
 
 }
+
 
 def write_data_to_file(data):
     """将数据写入文件"""
     with open(file_path, 'w') as f:
         json.dump(data, f)
+
 
 def read_data_from_file():
     """从文件读取数据"""
@@ -78,14 +82,13 @@ def read_data_from_file():
     return []
 
 
-
 # 尝试打开串行端口并在后台读取数据的函数
 def read_serial_data():
     ser = None
     buffer = ""  # 用于累积从串行端口读取的数据
 
     try:
-        ser = serial.Serial('COM3', 9600, timeout=1)  # 设置超时为None以持续等待数据
+        ser = serial.Serial('COM5', 9600, timeout=1)  # 设置超时为None以持续等待数据
 
         while True:
             data = ser.read(ser.in_waiting or 1).decode('iso-8859-1')  # 读取所有可用的数据
@@ -164,7 +167,6 @@ def data():
         return jsonify(data=data_from_serial)
 
 
-
 # 计算最近3次数据中的平均值
 @app.route('/calculate_average', methods=['GET'])
 def calculate_average_endpoint():
@@ -227,13 +229,20 @@ def calculate_diff_pp():
     r = parse_seal_data()
     if r and r["status"] == '拿起':
         current_rotation = r["seal_azimuth"]["Yaw"] if r else 0
-        if -15 <= current_rotation <= 15:
-            scores['angle'] = 25
+        if current_paper == "111222666":
+            if -90 <= current_rotation <= 90:
+                scores['angle'] = 25
 
-        elif -30 <= current_rotation <= 30:
-            scores['angle'] = 15
-        elif -45 <= current_rotation <= 45:
-            scores['angle'] = 10
+        else:
+            if -15 <= current_rotation <= 15:
+                scores['angle'] = 25
+
+            elif -30 <= current_rotation <= 30:
+                scores['angle'] = 15
+            elif -45 <= current_rotation <= 45:
+                scores['angle'] = 10
+
+            # current_rotation = current_rotation + 0.1 / 1.5
 
     else:
         current_rotation = 0
@@ -269,7 +278,7 @@ def calculate_diff_pp():
 
     # elif (current_max_diff < 10000 or current_max_diff < (max_press_value + 1) / 2 or time_count == 0) and is_pressing:
     elif (current_max_diff < 10000 or current_max_diff < (
-                    max_press_value + 1) / 2 or time_count == 0) and is_pressing:
+            max_press_value + 1) / 2 or time_count == 0) and is_pressing:
         # 按压结束，返回最大按压值时的位置和结果
         is_pressing = False
         sleep_count = 20
@@ -291,8 +300,8 @@ def calculate_diff_pp():
                 scores['location'] = 25
                 max_press_location[0] = seal_location_dict[current_paper][0]
                 max_press_location[1] = seal_location_dict[current_paper][1]
-            elif abs(max_press_location[0] - seal_location_dict[current_paper][0]) < location_range*2 and abs(
-                    max_press_location[1] - seal_location_dict[current_paper][1]) < location_range*2:
+            elif abs(max_press_location[0] - seal_location_dict[current_paper][0]) < location_range * 2 and abs(
+                    max_press_location[1] - seal_location_dict[current_paper][1]) < location_range * 2:
                 scores['location'] = 15
         result = get_press_result(max_press_value, seal_is_moved)
         print(
@@ -335,10 +344,10 @@ def calculate_press_location(diff_dict):
     }
     if current_paper == 111222666:
         positions = {
-            "PP_1": (55, 35),  # 左下角
+            "PP_1": (55, 30),  # 左下角
             "PP_2": (55, 70),  # 右下角
             "PP_3": (45, 70),  # 右上角
-            "PP_4": (45, 35)  # 左上角
+            "PP_4": (45, 30)  # 左上角
         }
 
     total_weight = sum(diff_dict.values())
@@ -422,6 +431,7 @@ def parse_seal_data(entry=""):
             seal_magz = float(seal_azimuth_info.split('Magz:')[1].split(',')[0])
             seal_yaw = -float(seal_azimuth_info.split('Yaw:')[1].split(';')[0])
             angle = seal_yaw + 85
+            angle = angle - (angle % 5)
             # print("调整前：" + str(seal_yaw) + "调整后：" + str(angle))
 
             return {
@@ -477,11 +487,9 @@ def seal_data():
         return jsonify(data)
 
 
-
 if __name__ == '__main__':
     serial_thread = Thread(target=read_serial_data)
     serial_thread.daemon = True  # 设置为守护线程，这样当主程序退出时线程也会退出
     serial_thread.start()
 
     app.run(debug=True, threaded=True)
-
