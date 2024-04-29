@@ -431,7 +431,7 @@ function initializeCharts() {
         seal.style.top = `${sealData.top}%`;
         seal.style.left = `${sealData.left}%`;
         seal.style.transform = `translate(-50%, -50%) rotate(${sealData.rotation}deg)`;
-        seal.style.width = '7.8vw'; // 控制印章的大小
+        seal.style.width = '8.5vw'; // 控制印章的大小
         seal.style.display = 'block';
         imageContainer.appendChild(seal);
     }
@@ -465,7 +465,7 @@ function initializeCharts() {
         // 更新每个仪表盘
         Object.keys(maxScores).forEach(chartId => {
             const scoreValue = scores[chartId]; // 从scores对象中获取相应的得分
-            const percentage = (scoreValue / maxScores[chartId]) * 100; // 计算得分百分比
+            const percentage = (scoreValue / maxScores[chartId]) * 25; // 计算得分百分比
             const chart = myCharts[chartId];
             const currentName = chart.getOption().series[0].data[0].name; // 获取当前的name
             myCharts[chartId].setOption({
@@ -486,9 +486,9 @@ function initializeCharts() {
         updateTotalScore(totalScore.toFixed(0));
 
         document.getElementById('score').style.display = 'block';
-        setTimeout(() => {
-            fetchDataAndUpdateUI();
-        }, 10000); // 10000 milliseconds = 10 seconds
+<!--        setTimeout(() => {-->
+<!--            fetchDataAndUpdateUI();-->
+<!--        }, 30000); // 10000 milliseconds = 10 seconds-->
     }
 
 

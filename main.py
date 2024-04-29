@@ -23,7 +23,7 @@ is_pressing = False
 max_press_value = 0
 max_press_key = None
 max_press_location = None
-max_press_rotation = None
+max_press_rotation = 0
 
 seal_move_x = 0
 seal_move_y = 0
@@ -39,14 +39,14 @@ paper_code_to_image_url = {
     123454321: "static/22.jpg",
     111222444: "static/建设工程施工合同_01.png",
     111222555: "static/联合发文_01.png",
-    111222666: "static/建设工程施工合同_00.png"
+    111222666: "static/11.png"
 
     # 添加更多的映射
 }
 
 current_paper = 0
 seal_location_dict = {
-    111222666: [0, 0],
+    111222666: [64.6, 50],
     # 111222333: [0, 0],
     111222333: [54, 65],
 }
@@ -88,7 +88,7 @@ def read_serial_data():
     buffer = ""  # 用于累积从串行端口读取的数据
 
     try:
-        ser = serial.Serial('COM5', 9600, timeout=1)  # 设置超时为None以持续等待数据
+        ser = serial.Serial('COM3', 9600, timeout=1)  # 设置超时为None以持续等待数据
 
         while True:
             data = ser.read(ser.in_waiting or 1).decode('iso-8859-1')  # 读取所有可用的数据
@@ -227,32 +227,18 @@ def calculate_diff_pp():
     # 每次计算新的位置
     current_location = calculate_press_location(diff_dict)
     r = parse_seal_data()
-    if r and r["status"] == '拿起':
-        current_rotation = r["seal_azimuth"]["Yaw"] if r else 0
-        if current_paper == "111222666":
-            if -90 <= current_rotation <= 90:
-                scores['angle'] = 25
 
-        else:
-            if -15 <= current_rotation <= 15:
-                scores['angle'] = 25
-
-            elif -30 <= current_rotation <= 30:
-                scores['angle'] = 15
-            elif -45 <= current_rotation <= 45:
-                scores['angle'] = 10
-
+        # print(current_rotation, scores['angle'])
             # current_rotation = current_rotation + 0.1 / 1.5
 
-    else:
-        current_rotation = 0
+
 
     # 更新最大按压值、位置和对应的位置
     if current_max_diff > max_press_value:
         max_press_value = current_max_diff
         max_press_key = current_max_key  # 更新最大压力位置
         max_press_location = current_location  # 更新位置记录
-        max_press_rotation = current_rotation
+
 
         if r["status"] == '拿起' and seal_move_x != 0 and seal_move_y != 0:
             if abs(seal_move_x - r["seal_azimuth"]["Magx"]) > seal_move_diff:
@@ -273,6 +259,19 @@ def calculate_diff_pp():
         seal_move_y = r["seal_azimuth"]["Magy"]
         seal_is_moved = False
         time_count = 20
+        if r and r["status"] == '拿起':
+            current_rotation = r["seal_azimuth"]["Yaw"] if r else 0
+
+            if -15 <= current_rotation <= 15:
+                scores['angle'] = 25
+            elif -30 <= current_rotation <= 30:
+                scores['angle'] = 15
+            elif -45 <= current_rotation <= 45:
+                scores['angle'] = 10
+            else:
+                scores['angle'] = 0
+
+        max_press_rotation = current_rotation
         print(seal_is_moved)
 
 
@@ -281,7 +280,7 @@ def calculate_diff_pp():
             max_press_value + 1) / 2 or time_count == 0) and is_pressing:
         # 按压结束，返回最大按压值时的位置和结果
         is_pressing = False
-        sleep_count = 20
+        sleep_count = 30
         if max_press_value in range(200000, 500000):
             scores['press'] = 25
         elif max_press_value in range(10000, 200000):
@@ -295,14 +294,24 @@ def calculate_diff_pp():
         location_range = 5
 
         if current_paper != 0 and current_paper in seal_location_dict.keys():
-            if abs(max_press_location[0] - seal_location_dict[current_paper][0]) < location_range and abs(
-                    max_press_location[1] - seal_location_dict[current_paper][1]) < location_range:
-                scores['location'] = 25
-                max_press_location[0] = seal_location_dict[current_paper][0]
-                max_press_location[1] = seal_location_dict[current_paper][1]
-            elif abs(max_press_location[0] - seal_location_dict[current_paper][0]) < location_range * 2 and abs(
-                    max_press_location[1] - seal_location_dict[current_paper][1]) < location_range * 2:
-                scores['location'] = 15
+            if current_paper == 111222666:
+                if abs(max_press_location[0] - seal_location_dict[current_paper][0]) < 1 and abs(
+                        max_press_location[1] - seal_location_dict[current_paper][1]) < 1:
+                    scores['location'] = 25
+                    max_press_location[0] = seal_location_dict[current_paper][0]
+                    max_press_location[1] = seal_location_dict[current_paper][1]
+                else:
+                    scores['location'] = 0
+            else:
+                if abs(max_press_location[0] - seal_location_dict[current_paper][0]) < location_range and abs(
+                        max_press_location[1] - seal_location_dict[current_paper][1]) < location_range:
+                    scores['location'] = 25
+                    max_press_location[0] = seal_location_dict[current_paper][0]
+                    max_press_location[1] = seal_location_dict[current_paper][1]
+                elif abs(max_press_location[0] - seal_location_dict[current_paper][0]) < location_range * 2 and abs(
+                        max_press_location[1] - seal_location_dict[current_paper][1]) < location_range * 2:
+                    scores['location'] = 15
+
         result = get_press_result(max_press_value, seal_is_moved)
         print(
             f"【按压结束】 Max Value: {max_press_value}, Result: {result}, Location: {max_press_location}, Rotation:{max_press_rotation}")
@@ -314,7 +323,7 @@ def calculate_diff_pp():
         last_location = max_press_location  # 保存最后的位置
         last_rotation = max_press_rotation
         max_press_location = None  # 重置位置记录
-        max_press_rotation = None
+        max_press_rotation = 0
         print(last_location)
         return result, last_location, last_rotation, scores
 
@@ -430,8 +439,8 @@ def parse_seal_data(entry=""):
             seal_magy = float(seal_azimuth_info.split('Magy:')[1].split(',')[0])
             seal_magz = float(seal_azimuth_info.split('Magz:')[1].split(',')[0])
             seal_yaw = -float(seal_azimuth_info.split('Yaw:')[1].split(';')[0])
-            angle = seal_yaw + 85
-            angle = angle - (angle % 5)
+            angle = seal_yaw
+            # angle = angle - (angle % 5)
             # print("调整前：" + str(seal_yaw) + "调整后：" + str(angle))
 
             return {
