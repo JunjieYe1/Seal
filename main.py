@@ -27,44 +27,105 @@ max_press_rotation = 0
 
 seal_move_x = 0
 seal_move_y = 0
-seal_move_diff = 400
+
 seal_is_moved = False
 
 sleep_count = 0
 time_count = 0
-
-# paper_code与图片链接的映射字典
-paper_code_to_image_url = {
-    111222333: "static/盖章实训文件（中秋）_01.png",
-    123454321: "static/22.jpg",
-    111222444: "static/建设工程施工合同_01.png",
-    111222555: "static/联合发文_01.png",
-    111222666: "static/11.png"
-
-    # 添加更多的映射
-}
-
 current_paper = 0
-seal_location_dict = {
-    111222666: [64.6, 50],
-    # 111222333: [0, 0],
-    111222333: [54, 65],
-}
 
-correct_seal = 3
+# 配置数据开始
+# seal_move_diff = 400
+# # paper_code与图片链接的映射字典
+# paper_code_to_image_url = {
+#     111222333: "static/盖章实训文件（中秋）_01.png",
+#     123454321: "static/22.jpg",
+#     111222444: "static/建设工程施工合同_01.png",
+#     111222555: "static/联合发文_01.png",
+#     111222666: "static/11.png"
+#
+#     # 添加更多的映射
+# }
+#
+# pressure_range = [10000, 200000, 500000]
+#
+# seal_location_dict = {
+#     111222666: [64.6, 50],
+#     # 111222333: [0, 0],
+#     111222333: [54, 65],
+# }
+#
+# correct_seal_dict = {
+#     111222666: 3,
+#     111222444: 3,
+#     111222333: 3,
+# }
+#
+# port_num = 3
+#
+# # 印章图片路径
+#
+# seal_dict = {
+#     0: {"正": "static/公章-正.png", "浅": "static/公章-浅.png", "深": "static/公章-深.png", "移": "static/公章-移.png"},
+#     # 默认章
+#     1: {"正": "static/公章-服装-正.png", "浅": "static/公章-服装-浅.png", "深": "static/公章-服装-深.png",
+#         "移": "static/公章-服装-移.png"},
+#     2: {"正": "static/公章-建筑-正.png", "浅": "static/公章-建筑-浅.png", "深": "static/公章-建筑-深.png",
+#         "移": "static/公章-建筑-移.png"},
+#     3: {"正": "static/公章-建筑-正.png", "浅": "static/公章-建筑-浅.png", "深": "static/公章-建筑-深.png",
+#         "移": "static/公章-建筑-移.png"},
+#
+# }
+# 配置数据结束
 
-# 印章图片路径
+def convert_keys_to_int(d):
+    """尝试将字典的键从字符串转换为整数。"""
+    new_dict = {}
+    for k, v in d.items():
+        try:
+            # 尝试将键转换为整数
+            new_dict[int(k)] = v
+        except ValueError:
+            # 如果键不能转换为整数，则保持原样
+            new_dict[k] = v
+    return new_dict
+
+def load_config(filename):
+    """加载配置文件，并处理字典键为整数。"""
+    with open(filename, 'r', encoding='utf-8') as config_file:
+        config = json.load(config_file)
+
+    # 处理各个字典数据
+    config['seal_location_dict'] = convert_keys_to_int(config['seal_location_dict'])
+    config['correct_seal_dict'] = convert_keys_to_int(config['correct_seal_dict'])
+    config['paper_code_to_image_url'] = convert_keys_to_int(config['paper_code_to_image_url'])
+    config['seal_dict'] = convert_keys_to_int(config['seal_dict'])
+
+    # 如果有其他需要处理的字典，可以继续添加处理逻辑
+    # 示例：config['another_dict'] = convert_keys_to_int(config['another_dict'])
+
+    return config
+
+# 加载配置文件
+config = load_config('config.json')
+
+port_num = config['port_num']
+seal_move_diff = config['seal_move_diff']
+pressure_range = config['pressure_range']
+seal_location_dict = config['seal_location_dict']
+correct_seal_dict = config['correct_seal_dict']
+paper_code_to_image_url = config['paper_code_to_image_url']
+seal_dict = config['seal_dict']
+
+
 seal_no = 0,
-seal_dict = {
-    0: {"正": "static/公章-正.png", "浅": "static/公章-浅.png", "深": "static/公章-深.png", "移": "static/公章-移.png"},
-    # 默认章
-    1: {"正": "static/公章-服装-正.png", "浅": "static/公章-服装-浅.png", "深": "static/公章-服装-深.png",
-        "移": "static/公章-服装-移.png"},
-    2: {"正": "static/公章-建筑-正.png", "浅": "static/公章-建筑-浅.png", "深": "static/公章-建筑-深.png",
-        "移": "static/公章-建筑-移.png"},
-    3: {"正": "static/公章-建筑-正.png", "浅": "static/公章-建筑-浅.png", "深": "static/公章-建筑-深.png",
-            "移": "static/公章-建筑-移.png"},
 
+scores = {
+    'seal_no': False,
+    'angle': 5,
+    'press': 5,
+    'no_slip': 25,
+    'location': 5
 }
 
 
@@ -88,15 +149,20 @@ def read_serial_data():
     buffer = ""  # 用于累积从串行端口读取的数据
 
     try:
-        ser = serial.Serial('COM3', 9600, timeout=1)  # 设置超时为None以持续等待数据
+        ser = serial.Serial('COM'+str(port_num), 9600, timeout=1)  # 设置超时为None以持续等待数据
 
         while True:
             data = ser.read(ser.in_waiting or 1).decode('iso-8859-1')  # 读取所有可用的数据
             buffer += data  # 将新数据追加到缓冲区
 
+
             start_pos = buffer.find('$')
             if start_pos != -1:
                 end_pos = buffer.find('$', start_pos + 1)
+                reset_pos = buffer.find('Reset')
+                if end_pos == -1 and reset_pos != -1:
+                    end_pos = reset_pos+5
+                    print(end_pos)
                 if end_pos != -1:
                     segment = buffer[start_pos + 1:end_pos]
                     # print(segment)
@@ -203,15 +269,8 @@ def sleep_count_tick(sleep_count):
 
 
 def calculate_diff_pp():
-    global pp_averages, is_pressing, max_press_value, max_press_key, max_press_location, max_press_rotation, seal_move_x, seal_move_y, seal_move_diff, seal_is_moved, sleep_count, time_count
-    scores = {
-        'seal_no': False,
-        'angle': 5,
-        'press': 5,
-        'no_slip': 25,
-        'location': 5
-    }
-
+    global pp_averages, is_pressing, max_press_value, max_press_key, max_press_location, max_press_rotation, seal_move_x, seal_move_y, seal_move_diff, seal_is_moved, sleep_count, time_count, scores
+    # print(scores)
     sleep_count = sleep_count_tick(sleep_count)
     time_count = sleep_count_tick(time_count)
 
@@ -228,17 +287,15 @@ def calculate_diff_pp():
     current_location = calculate_press_location(diff_dict)
     r = parse_seal_data()
 
-        # print(current_rotation, scores['angle'])
-            # current_rotation = current_rotation + 0.1 / 1.5
-
-
+    # print(current_rotation, scores['angle'])
+    # current_rotation = current_rotation + 0.1 / 1.5
 
     # 更新最大按压值、位置和对应的位置
-    if current_max_diff > max_press_value:
+    if is_pressing and current_max_diff > max_press_value:
         max_press_value = current_max_diff
         max_press_key = current_max_key  # 更新最大压力位置
         max_press_location = current_location  # 更新位置记录
-
+        print(max_press_location)
 
         if r["status"] == '拿起' and seal_move_x != 0 and seal_move_y != 0:
             if abs(seal_move_x - r["seal_azimuth"]["Magx"]) > seal_move_diff:
@@ -252,13 +309,13 @@ def calculate_diff_pp():
             f"Pressing... Current Max Value: {max_press_value}, Location: {max_press_location}, Rotation:{max_press_rotation}")
 
     # 检测按压开始和结束
-    if current_max_diff > 10000 and not is_pressing and sleep_count == 0 and (r and r["status"] == '拿起'):
+    if current_max_diff > pressure_range[0] and not is_pressing and sleep_count == 0 and (r and r["status"] == '拿起'):
         print("【开始按压】")
         is_pressing = True
         seal_move_x = r["seal_azimuth"]["Magx"]
         seal_move_y = r["seal_azimuth"]["Magy"]
         seal_is_moved = False
-        time_count = 20
+
         if r and r["status"] == '拿起':
             current_rotation = r["seal_azimuth"]["Yaw"] if r else 0
 
@@ -271,24 +328,25 @@ def calculate_diff_pp():
             else:
                 scores['angle'] = 0
 
-        max_press_rotation = current_rotation
+            max_press_rotation = current_rotation
         print(seal_is_moved)
 
 
-    # elif (current_max_diff < 10000 or current_max_diff < (max_press_value + 1) / 2 or time_count == 0) and is_pressing:
-    elif (current_max_diff < 10000 or current_max_diff < (
+
+    # elif (current_max_diff < pressure_range[0] or current_max_diff < (max_press_value + 1) / 2 or time_count == 0) and is_pressing:
+    elif (current_max_diff < pressure_range[0] or current_max_diff < (
             max_press_value + 1) / 2 or time_count == 0) and is_pressing:
         # 按压结束，返回最大按压值时的位置和结果
         is_pressing = False
         sleep_count = 30
-        if max_press_value in range(200000, 500000):
+        if max_press_value in range(pressure_range[1], pressure_range[2]):
             scores['press'] = 25
-        elif max_press_value in range(10000, 200000):
+        elif max_press_value in range(pressure_range[0], pressure_range[1]):
             scores['press'] = 15
 
         if seal_is_moved:
             scores['no_slip'] = 5
-        if seal_no == correct_seal:
+        if current_paper and current_paper in correct_seal_dict.keys() and seal_no == correct_seal_dict[current_paper]:
             scores['seal_no'] = True
 
         location_range = 5
@@ -315,8 +373,9 @@ def calculate_diff_pp():
         result = get_press_result(max_press_value, seal_is_moved)
         print(
             f"【按压结束】 Max Value: {max_press_value}, Result: {result}, Location: {max_press_location}, Rotation:{max_press_rotation}")
-        print(scores)
+
         print(seal_is_moved)
+        time_count = 50
         seal_is_moved = False
         max_press_value = 0  # 重置最大按压值
         max_press_key = None  # 重置最大压力位置
@@ -332,9 +391,9 @@ def calculate_diff_pp():
 
 def get_press_result(press_value, seal_is_moved):
     global seal_no, seal_dict
-    if press_value < 200000:
+    if press_value < pressure_range[1]:
         return seal_dict[seal_no]["浅"]
-    elif press_value < 500000:
+    elif press_value < pressure_range[2]:
         if seal_is_moved:
             return seal_dict[seal_no]["移"]
         else:
@@ -474,8 +533,8 @@ def seal_status():
 
 @app.route('/seal_data')
 def seal_data():
-    global is_pressing
-    result, [x, y], r, scores = calculate_diff_pp()
+    global is_pressing, scores
+    result, [x, y], r, _scores = calculate_diff_pp()
 
     if result is None:
         # 如果没有有效地按压结果，返回一个状态消息
@@ -490,10 +549,43 @@ def seal_data():
             "rotation": r,
             "image_url": result,
             "is_pressing": is_pressing,
-            "scores": scores
+            "scores": _scores
+        }
+        scores = {
+            'seal_no': False,
+            'angle': 5,
+            'press': 5,
+            'no_slip': 25,
+            'location': 5
         }
         print(data)
+
         return jsonify(data)
+
+
+@app.route('/check_reset', methods=['GET'])
+def check_reset():
+    global recent_data_from_serial
+    found_reset = False
+
+    with data_lock:  # 使用锁确保线程安全
+        # 遍历记录，检查是否包含 'Reset'
+        for i, data in enumerate(recent_data_from_serial):
+            if 'Reset' in data:
+                found_reset = True
+                # 替换掉 'Reset' 字符串
+                recent_data_from_serial[i] = data.replace('Reset', '')
+
+        # 如果发现 'Reset'，可选择性地执行额外的操作，如清空列表
+        if found_reset:
+            # 清空列表的操作，根据需求可注释或修改
+            # recent_data_from_serial.clear()
+
+            # 写入更新后的数据到文件
+            write_data_to_file(recent_data_from_serial)
+
+    return jsonify({'found_reset': found_reset})
+
 
 
 if __name__ == '__main__':
@@ -501,4 +593,8 @@ if __name__ == '__main__':
     serial_thread.daemon = True  # 设置为守护线程，这样当主程序退出时线程也会退出
     serial_thread.start()
 
-    app.run(debug=True, threaded=True)
+    app.run(debug=True, threaded=True, port=5050)
+
+
+
+# pyinstaller -F --add-data="static;static" --add-data="templates;templates" --add-data="config.json:." main.py

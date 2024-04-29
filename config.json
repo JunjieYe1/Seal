@@ -1,0 +1,27 @@
+{
+    "port_num": 5,
+    "seal_move_diff": 400,
+    "pressure_range": [10000, 200000, 500000],
+    "seal_location_dict": {
+        "111222666": [64.6, 50],
+        "111222333": [54, 65]
+    },
+    "correct_seal_dict": {
+        "111222666": 3,
+        "111222444": 3,
+        "111222333": 3
+    },
+    "paper_code_to_image_url": {
+        "111222333": "static/盖章实训文件（中秋）_01.png",
+        "123454321": "static/22.jpg",
+        "111222444": "static/建设工程施工合同_01.png",
+        "111222555": "static/联合发文_01.png",
+        "111222666": "static/11.png"
+    },
+    "seal_dict": {
+        "0": {"正": "static/公章-建筑-正.png", "浅": "static/公章-建筑-浅.png", "深": "static/公章-建筑-深.png", "移": "static/公章-建筑-移.png"},
+        "1": {"正": "static/公章-服装-正.png", "浅": "static/公章-服装-浅.png", "深": "static/公章-服装-深.png", "移": "static/公章-服装-移.png"},
+        "2": {"正": "static/公章-建筑-正.png", "浅": "static/公章-建筑-浅.png", "深": "static/公章-建筑-深.png", "移": "static/公章-建筑-移.png"},
+        "3": {"正": "static/公章-建筑-正.png", "浅": "static/公章-建筑-浅.png", "深": "static/公章-建筑-深.png", "移": "static/公章-建筑-移.png"}
+    }
+}

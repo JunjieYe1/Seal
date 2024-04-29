@@ -486,20 +486,31 @@ function initializeCharts() {
         updateTotalScore(totalScore.toFixed(0));
 
         document.getElementById('score').style.display = 'block';
-<!--        setTimeout(() => {-->
-<!--            fetchDataAndUpdateUI();-->
-<!--        }, 30000); // 10000 milliseconds = 10 seconds-->
+         //  setTimeout(() => {
+         //      fetchDataAndUpdateUI();
+         // }, 30000); // 10000 milliseconds = 10 seconds
     }
 
-
+    async function checkAndHandleReset() {
+        try {
+            const response = await fetch('/check_reset');
+            const result = await response.json();
+            if (result.found_reset) {
+                fetchDataAndUpdateUI(); // 调用更新UI的函数
+            }
+        } catch (error) {
+            console.error('Error checking reset:', error);
+        }
+    }
 
     document.addEventListener('DOMContentLoaded', function() {
         fetchDataAndUpdateUI();
         fetchSealStatus();
         //setInterval(fetchDataAndUpdateUI, 1000); // 每1秒更新文件和印章状态
-        setInterval(fetchSealStatus, 100); // 每1秒更新印章状态
-        setInterval(fetchSerialData, 100); // 每200毫秒请求/data数据
-        setInterval(fetchSealDataAndUpdateUI, 100);
+        setInterval(fetchSealStatus, 200); // 每1秒更新印章状态
+        setInterval(fetchSerialData, 200); // 每200毫秒请求/data数据
+        setInterval(fetchSealDataAndUpdateUI, 200);
+        setInterval(checkAndHandleReset, 500);
     });
     </script>
 </body>
