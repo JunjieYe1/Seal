@@ -25,7 +25,8 @@ body {
     border-radius: 5px;
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     z-index: 1000;
-    min-width: 300px;
+    min-width: 250px;
+    max-width: 25vw;
 }
 
 .title {
@@ -79,8 +80,8 @@ body {
 }
 
 .image-container {
-    width: 100vw;
-    height: 100vh;
+    width: 1920px;
+    height: 1080px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -90,8 +91,8 @@ body {
 }
 
 .image-container img {
-    max-height: 95vh;
-    max-width: 95vw;
+    max-height: 1026px;
+    max-width: 1824px;
     width: auto;
     height: auto;
     border-radius: 5px;
@@ -136,8 +137,8 @@ body {
             text-shadow: 1px 1px 2px #a8a8a8;
         }
         .chart {
-            width: 200px;
-            height: 200px;
+            width: 10vw;
+            height: 10vw;
             border: 1px solid #ccc; /* Adding a subtle border */
             border-radius: 5px; /* Rounded corners */
             background-color: #f8f9fa; /* Light background for the chart area */
@@ -162,6 +163,7 @@ body {
         <div class="status-box"><strong>按压状态:</strong> <span id="press-status">未按压</span></div>
         <div id="seal-container" style="display: none;"></div>
         <button class="update-button" onclick="fetchDataAndUpdateUI()">开始模拟</button>
+        <button class="update-button" onclick="createTestSeal(62, 66.5, 0)">生成测试印章</button>
     </div>
     <div class="main-container">
         <div class="image-container">
@@ -266,6 +268,14 @@ function initializeCharts() {
             }]
         };
         myCharts[data.elementId].setOption(option);
+    });
+     // 窗口尺寸变化时更新所有图表
+    window.addEventListener('resize', function () {
+        for (var key in myCharts) {
+            if (myCharts.hasOwnProperty(key)) {
+                myCharts[key].resize();
+            }
+        }
     });
 }
 
@@ -421,34 +431,71 @@ function initializeCharts() {
         }
     }
 
-    function createSeal(sealData) {
-        const imageContainer = document.querySelector('.image-container');
-        const seal = document.createElement('img');
-        seal.className = 'seal';
-        seal.style.position = 'absolute';
-        seal.src = sealData.image_url;
-        seal.alt = 'Seal';
-        seal.style.top = `${sealData.top}%`;
-        seal.style.left = `${sealData.left}%`;
-        seal.style.transform = `translate(-50%, -50%) rotate(${sealData.rotation}deg)`;
-        seal.style.width = '8.5vw'; // 控制印章的大小
-        seal.style.display = 'block';
-        imageContainer.appendChild(seal);
-    }
+function createSeal(sealData) {
+    const imageContainer = document.querySelector('.image-container');
+    const containerRect = imageContainer.getBoundingClientRect(); // 获取容器的实际位置和尺寸
+
+    // 创建新的印章图像
+    const seal = document.createElement('img');
+    seal.className = 'seal';
+    seal.style.position = 'absolute';
+    seal.src = sealData.image_url;
+    seal.alt = 'Seal';
+
+    // 将百分比坐标转换为基于容器尺寸的像素坐标
+    const topPosition = (sealData.top / 100) * containerRect.height;
+    const leftPosition = (sealData.left / 100) * containerRect.width;
+
+    seal.style.top = `${topPosition}px`; // 设置印章的绝对顶部位置
+    seal.style.left = `${leftPosition}px`; // 设置印章的绝对左侧位置
+    seal.style.transform = `translate(-50%, -50%) rotate(${sealData.rotation}deg)`;
+    seal.style.width = '163px'; // 控制印章的大小
+    seal.style.display = 'block';
+
+    imageContainer.appendChild(seal);
+}
 
     function clearAllSeals() {
         const seals = document.querySelectorAll('.seal');
         seals.forEach(seal => seal.remove());
     }
 
-    // function toggleScoreDisplay() {
-    //     const scoreContainer = document.querySelector('#score');
-    //     if (scoreContainer.style.display === 'none' || scoreContainer.style.display === '') {
-    //         scoreContainer.style.display = 'block';
-    //     } else {
-    //         scoreContainer.style.display = 'none';
-    //     }
-    // }
+function createTestSeal(x, y, rotation) {
+    const imageContainer = document.querySelector('.image-container');
+    const referenceImage = imageContainer.querySelector('img');
+
+    // 先清除之前的印章（如果需要）
+    const existingSeal = imageContainer.querySelector('.test-seal');
+    if (existingSeal) {
+        existingSeal.remove();
+    }
+
+    // 确保图片已加载完毕
+    if (referenceImage.complete && referenceImage.naturalHeight !== 0) {
+        positionSealBasedOnImage(referenceImage, x, y, rotation);
+    } else {
+        referenceImage.onload = () => {
+            positionSealBasedOnImage(referenceImage, x, y, rotation);
+        };
+    }
+}
+
+function positionSealBasedOnImage(image, x, y, rotation) {
+    const imageRect = image.getBoundingClientRect(); // 获取图片相对于视口的位置和尺寸
+
+    // 创建新的印章图像
+    const seal = document.createElement('img');
+    seal.className = 'test-seal';
+    seal.src = 'static/公章-建筑-正.png';
+    seal.alt = 'Test Seal';
+    seal.style.position = 'absolute';
+    seal.style.left = `${imageRect.left + imageRect.width * x / 100}px`; // 以像素为单位定位印章
+    seal.style.top = `${imageRect.top + imageRect.height * y / 100}px`; // 以像素为单位定位印章
+    seal.style.transform = `translate(-50%, -50%) rotate(${rotation}deg)`;
+    seal.style.width = '15.11vh'; // 控制印章的大小，基于高度的百分比
+
+    document.body.appendChild(seal); // 确保印章添加到 body 中以避免被相对定位的父元素影响
+}
 
     function updateScore(scores) {
         // 满分配置
