@@ -1,7 +1,7 @@
 {
-    "port_num": 5,
-    "seal_move_diff": 400,
-    "pressure_range": [10000, 200000, 500000],
+    "port_num": 3,
+    "seal_move_diff": 140,
+    "pressure_range": [10000, 60000, 400000],
     "seal_location_dict": {
         "111222666": [64.6, 50],
         "111222333": [54, 65]
@@ -16,11 +16,11 @@
         "123454321": "static/22.jpg",
         "111222444": "static/建设工程施工合同_01.png",
         "111222555": "static/联合发文_01.png",
-        "111222666": "static/11.png"
+        "111222666": "static/建设工程施工合同_00.png"
     },
     "seal_dict": {
         "0": {"正": "static/公章-建筑-正.png", "浅": "static/公章-建筑-浅.png", "深": "static/公章-建筑-深.png", "移": "static/公章-建筑-移.png"},
-        "1": {"正": "static/公章-服装-正.png", "浅": "static/公章-服装-浅.png", "深": "static/公章-服装-深.png", "移": "static/公章-服装-移.png"},
+        "1": {"正": "static/公章-建筑设计-正.png", "浅": "static/公章-建筑设计-浅.png", "深": "static/公章-建筑设计-深.png", "移": "static/公章-建筑设计-移.png"},
         "2": {"正": "static/公章-建筑-正.png", "浅": "static/公章-建筑-浅.png", "深": "static/公章-建筑-深.png", "移": "static/公章-建筑-移.png"},
         "3": {"正": "static/公章-建筑-正.png", "浅": "static/公章-建筑-浅.png", "深": "static/公章-建筑-深.png", "移": "static/公章-建筑-移.png"}
     }

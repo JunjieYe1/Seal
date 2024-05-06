@@ -334,8 +334,7 @@ def calculate_diff_pp():
 
 
     # elif (current_max_diff < pressure_range[0] or current_max_diff < (max_press_value + 1) / 2 or time_count == 0) and is_pressing:
-    elif (current_max_diff < pressure_range[0] or current_max_diff < (
-            max_press_value + 1) / 2 or time_count == 0) and is_pressing:
+    elif (current_max_diff < pressure_range[0] or time_count == 0) and is_pressing:
         # 按压结束，返回最大按压值时的位置和结果
         is_pressing = False
         sleep_count = 30
@@ -349,15 +348,21 @@ def calculate_diff_pp():
         if current_paper and current_paper in correct_seal_dict.keys() and seal_no == correct_seal_dict[current_paper]:
             scores['seal_no'] = True
 
-        location_range = 5
+        location_range = 6
 
         if current_paper != 0 and current_paper in seal_location_dict.keys():
             if current_paper == 111222666:
-                if abs(max_press_location[0] - seal_location_dict[current_paper][0]) < 1 and abs(
-                        max_press_location[1] - seal_location_dict[current_paper][1]) < 1:
+                if abs(max_press_location[0] - seal_location_dict[current_paper][0]) < 1:
+                    scores['location'] = 15
+                    max_press_location[0] = seal_location_dict[current_paper][0]
+
+                elif abs(max_press_location[0] - seal_location_dict[current_paper][0]) < 3 and abs(
+                        max_press_location[1] - seal_location_dict[current_paper][1]) < 6:
+
                     scores['location'] = 25
                     max_press_location[0] = seal_location_dict[current_paper][0]
                     max_press_location[1] = seal_location_dict[current_paper][1]
+
                 else:
                     scores['location'] = 0
             else:
@@ -412,10 +417,10 @@ def calculate_press_location(diff_dict):
     }
     if current_paper == 111222666:
         positions = {
-            "PP_1": (55, 30),  # 左下角
-            "PP_2": (55, 70),  # 右下角
-            "PP_3": (45, 70),  # 右上角
-            "PP_4": (45, 30)  # 左上角
+            "PP_1": (80, 30),  # 左下角
+            "PP_2": (80, 70),  # 右下角
+            "PP_3": (20, 70),  # 右上角
+            "PP_4": (20, 30)  # 左上角
         }
 
     total_weight = sum(diff_dict.values())

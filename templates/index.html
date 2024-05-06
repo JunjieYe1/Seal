@@ -311,7 +311,7 @@ function initializeCharts() {
             correctnessSpan.textContent = '正确';
             correctnessSpan.style.color = '#4169E1'; // Blue for correct
         } else {
-            correctnessSpan.textContent = '错误';
+            correctnessSpan.textContent = '错误章，无效';
             correctnessSpan.style.color = '#DC143C'; // Red for incorrect
         }
     }
@@ -530,7 +530,13 @@ function positionSealBasedOnImage(image, x, y, rotation) {
             return total + (scores[chartId] / maxScores[chartId] * maxScores[chartId]);
         }, 0);
         // 更新总分显示
-        updateTotalScore(totalScore.toFixed(0));
+        if(scores.seal_no){
+            updateTotalScore(totalScore.toFixed(0));
+        }
+        else{
+            updateTotalScore(0);
+        }
+
 
         document.getElementById('score').style.display = 'block';
          //  setTimeout(() => {
