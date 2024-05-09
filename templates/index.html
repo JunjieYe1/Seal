@@ -163,7 +163,7 @@ body {
         <div class="status-box"><strong>按压状态:</strong> <span id="press-status">未按压</span></div>
         <div id="seal-container" style="display: none;"></div>
         <button class="update-button" onclick="fetchDataAndUpdateUI()">开始模拟</button>
-        <button class="update-button" onclick="createTestSeal(62, 66.5, 0)">生成测试印章</button>
+        <button class="update-button" onclick="createTestSeal(54, 65, 0)">生成测试印章</button>
     </div>
     <div class="main-container">
         <div class="image-container">
@@ -492,10 +492,10 @@ function positionSealBasedOnImage(image, x, y, rotation) {
     seal.src = 'static/公章-建筑-正.png';
     seal.alt = 'Test Seal';
     seal.style.position = 'absolute';
-    seal.style.left = `${imageRect.left + imageRect.width * x / 100}px`; // 以像素为单位定位印章
-    seal.style.top = `${imageRect.top + imageRect.height * y / 100}px`; // 以像素为单位定位印章
+    seal.style.left = `${(x / 100) * (containerRect.width+containerRect.left)}px`; // 以像素为单位定位印章
+    seal.style.top = `${(y / 100) * containerRect.width*0.5625+containerRect.top}px`; // 以像素为单位定位印章
     seal.style.transform = `translate(-50%, -50%) rotate(${rotation}deg)`;
-    console.log(imageRect.width);
+    console.log(containerRect.width);
     seal.style.width = `${containerRect.width*0.0848}px`; // 控制印章的大小，基于高度的百分比
 
     document.body.appendChild(seal); // 确保印章添加到 body 中以避免被相对定位的父元素影响
