@@ -36,7 +36,7 @@ current_paper = 0
 start_location = 0
 
 base_position_x, base_position_y = 3193, 3860  # 初始基准值
-threshold = 400  # 偏移阈值
+threshold = 500  # 偏移阈值
 abnormal_positions = [base_position_x, base_position_y]  # 存储最近的异常坐标
 current_xy = [0, 0]
 is_pressing_pos = False

@@ -1,9 +1,9 @@
 {
     "port_num": 5,
-    "seal_move_diff": 2,
-    "pressure_range": [50, 200, 2000],
+    "seal_move_diff": 5,
+    "pressure_range": [50, 300, 2000],
     "seal_location_dict": {
-        "111222666": [64.6, 50],
+        "111222666": [67.5, 50],
         "111222333": [54, 65]
     },
     "correct_seal_dict": {
