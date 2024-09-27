@@ -12,7 +12,7 @@ $(document).ready(function(){
             var formattedData = response.data.replace(/\n/g, '<br>'); // 替换换行符为HTML换行标签
             $('#data').html(formattedData); // 使用.html()而非.text()
         });
-    }, 200); // 每200毫秒更新数据，不是每秒
+    }, 100); // 每200毫秒更新数据，不是每秒
 });
 </script>
 

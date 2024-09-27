@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Serial Data Display with Image</title>
+    <title>盖章实训</title>
     <style>
 body {
     margin: 0;
@@ -443,13 +443,14 @@ function createSeal(sealData) {
     seal.alt = 'Seal';
 
     // 将百分比坐标转换为基于容器尺寸的像素坐标
-    const topPosition = (sealData.top / 100) * containerRect.height;
-    const leftPosition = (sealData.left / 100) * containerRect.width;
 
-    seal.style.top = `${topPosition}px`; // 设置印章的绝对顶部位置
-    seal.style.left = `${leftPosition}px`; // 设置印章的绝对左侧位置
+
+    seal.style.top = `${(sealData.top / 100) * containerRect.width*0.5625+containerRect.top}px`; // 设置印章的绝对顶部位置
+    seal.style.left = `${( sealData.left/ 100) * (containerRect.width+containerRect.left)}px`; // 设置印章的绝对左侧位置
     seal.style.transform = `translate(-50%, -50%) rotate(${sealData.rotation}deg)`;
-    seal.style.width = `${containerRect.width*0.848}px`; // 控制印章的大小
+
+
+    seal.style.width = `${containerRect.width*0.0848}px`; // 控制印章的大小
     seal.style.display = 'block';
 
     imageContainer.appendChild(seal);
@@ -564,10 +565,10 @@ function positionSealBasedOnImage(image, x, y, rotation) {
         fetchDataAndUpdateUI();
         fetchSealStatus();
         //setInterval(fetchDataAndUpdateUI, 1000); // 每1秒更新文件和印章状态
-        setInterval(fetchSealStatus, 200); // 每1秒更新印章状态
-        setInterval(fetchSerialData, 200); // 每200毫秒请求/data数据
-        setInterval(fetchSealDataAndUpdateUI, 200);
-        setInterval(checkAndHandleReset, 500);
+        setInterval(fetchSealStatus, 100); // 每1秒更新印章状态
+        setInterval(fetchSerialData, 100); // 每200毫秒请求/data数据
+        setInterval(fetchSealDataAndUpdateUI, 100);
+        setInterval(checkAndHandleReset, 200);
     });
     </script>
 </body>

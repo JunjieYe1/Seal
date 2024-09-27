@@ -1,15 +1,15 @@
 {
-    "port_num": 3,
-    "seal_move_diff": 140,
-    "pressure_range": [10000, 60000, 400000],
+    "port_num": 5,
+    "seal_move_diff": 2,
+    "pressure_range": [50, 200, 2000],
     "seal_location_dict": {
         "111222666": [64.6, 50],
         "111222333": [54, 65]
     },
     "correct_seal_dict": {
-        "111222666": 3,
-        "111222444": 3,
-        "111222333": 3
+        "111222666": 2,
+        "111222444": 2,
+        "111222333": 2
     },
     "paper_code_to_image_url": {
         "111222333": "static/盖章实训文件（中秋）_01.png",
